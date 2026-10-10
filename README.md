@@ -45,7 +45,7 @@ Uninstalling Peel removes its local library. Backups contain your sticker images
 
 ## Development
 
-Requires Node 24, Bun 1.4.3, and FFmpeg with WebP support for the web converter and tests.
+Requires Node 24.21.0, Bun 1.4.3, and FFmpeg with WebP support for the web converter and tests.
 
 ```sh
 bun install --frozen-lockfile

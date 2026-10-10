@@ -2,7 +2,7 @@
   "expo": {
     "name": "Peel",
     "slug": "peel-stickers",
-    "version": "1.1.0-rc.3",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F8F7F2"
       },
-      "versionCode": 12
+      "versionCode": 13
     },
     "web": {
       "bundler": "metro",
