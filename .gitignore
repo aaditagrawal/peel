@@ -39,3 +39,26 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Local installable builds
+/artifacts/
+
+# Local native module build output
+modules/**/build/
+modules/**/.cxx/
+
+# Private configuration and signing material
+.env
+.env.*
+!.env.example
+*.keystore
+credentials.json
+.claude/
+.agents/
+/AGENTS.md
+/PRODUCT.md
+/DESIGN.md
+/QA.md
+
+# Standalone emulator fixture outputs
+scripts/test-whatsapp-handoff/build/

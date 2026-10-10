@@ -1,0 +1,6 @@
+* text=auto
+modules/whatsapp-stickers/android/src/main/cpp/vendor/** linguist-vendored -whitespace
+*.png binary
+*.gif binary
+*.webp binary
+*.ttf binary

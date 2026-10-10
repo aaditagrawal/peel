@@ -1,0 +1,15 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.whatsapp" android:versionCode="1" android:versionName="contract-test-only">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+  <permission android:name="com.whatsapp.sticker.READ" android:protectionLevel="signature" />
+  <uses-permission android:name="com.whatsapp.sticker.READ" />
+  <queries><package android:name="app.peel.stickers" /></queries>
+  <application android:label="Peel handoff test double" android:debuggable="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    <activity android:name="peel.handoff.ImportActivity" android:exported="true">
+      <intent-filter>
+        <action android:name="com.whatsapp.intent.action.ENABLE_STICKER_PACK" />
+        <category android:name="android.intent.category.DEFAULT" />
+      </intent-filter>
+    </activity>
+    <receiver android:name="peel.handoff.ModeReceiver" android:exported="true" />
+  </application>
+</manifest>

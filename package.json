@@ -1,22 +1,63 @@
 {
-  "name": "stickerapp",
-  "version": "1.0.0",
-  "main": "index.ts",
+  "name": "peel-stickers",
+  "version": "1.1.0-rc.1",
+  "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/dm-mono": "^0.4.2",
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo/metro-runtime": "~57.0.16",
+    "@hono/node-server": "^2.1.3",
     "expo": "~57.0.26",
+    "expo-constants": "~57.0.20",
+    "expo-dev-client": "~57.0.19",
+    "expo-document-picker": "~57.0.3",
+    "expo-file-system": "~57.0.7",
+    "expo-font": "~57.0.4",
+    "expo-image": "~57.0.5",
+    "expo-image-picker": "~57.0.20",
+    "expo-linking": "~57.0.11",
+    "expo-router": "~57.0.24",
     "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
+    "expo-video": "~57.0.5",
+    "hono": "^4.13.13",
+    "idb-keyval": "^6.3.0",
+    "lucide-react-native": "^1.52.0",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@types/node": "^26.6.4",
     "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "expo start --go --host lan",
+    "web": "expo start --web --host lan",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "server": "node --env-file-if-exists=.env --import tsx server/index.ts",
+    "test": "tsx --test server/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "dev": "node scripts/dev.mjs",
+    "format": "prettier --write src server scripts plugins app.json package.json tsconfig.json",
+    "lint": "expo lint",
+    "release:check": "node scripts/release-info.mjs --check",
+    "build:apk": "bash scripts/build-apk.sh"
   },
-  "private": true
+  "private": true,
+  "packageManager": "bun@1.4.3",
+  "engines": {
+    "node": "24.x"
+  }
 }
