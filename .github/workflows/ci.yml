@@ -55,6 +55,9 @@ jobs:
           distribution: temurin
           java-version: "21.0.8"
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
       - run: bun install --frozen-lockfile
       - run: bunx expo prebuild --platform android --no-install
