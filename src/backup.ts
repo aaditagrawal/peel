@@ -8,10 +8,10 @@ import {
 import type { Pack } from "./library-store";
 
 export async function exportBackup(packs: Pack[]): Promise<boolean> {
-  const raw = serializeBackup(packs);
   const access =
     await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
   if (!access.granted) return false;
+  const raw = serializeBackup(packs);
   const name = `peel-backup-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const uri = await FileSystem.StorageAccessFramework.createFileAsync(
     access.directoryUri,

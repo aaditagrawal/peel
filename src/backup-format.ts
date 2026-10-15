@@ -11,7 +11,7 @@ function validMedia(value: string, prefix: string, maxBytes: number) {
     value.length % 4 === 0 &&
     (value.length * 3) / 4 - padding <= maxBytes &&
     value.startsWith(prefix) &&
-    !nonBase64.test(value.slice(0, value.length - padding))
+    value.search(nonBase64) === (padding ? value.length - padding : -1)
   );
 }
 function cleanSticker(s: Sticker): Sticker {
@@ -35,29 +35,10 @@ function cleanPack(p: Pack): Pack {
     ...(p.starter === true ? { starter: true } : {}),
   };
 }
-export function parseBackup(raw: string): Pack[] {
-  if (raw.length > MAX_BACKUP_BYTES)
-    throw new Error("This backup exceeds the 128 MB limit.");
-  let value: unknown;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    throw invalid();
-  }
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    !("format" in value) ||
-    value.format !== "peel-backup" ||
-    !("version" in value) ||
-    value.version !== 1 ||
-    !("packs" in value) ||
-    !Array.isArray(value.packs) ||
-    value.packs.length > 500
-  )
-    throw invalid();
+function validatePacks(packs: unknown): asserts packs is Pack[] {
+  if (!Array.isArray(packs) || packs.length > 500) throw invalid();
   const ids = new Set<string>();
-  return value.packs.map((p: unknown) => {
+  for (const p of packs) {
     if (
       !isPack(p) ||
       !/^[a-zA-Z0-9_-]{1,100}$/.test(p.id) ||
@@ -84,17 +65,43 @@ export function parseBackup(raw: string): Pack[] {
         throw invalid();
       stickerIds.add(s.id);
     }
-    return cleanPack(p);
-  });
+  }
+}
+export function parseBackup(raw: string): Pack[] {
+  if (raw.length > MAX_BACKUP_BYTES)
+    throw new Error("This backup exceeds the 128 MB limit.");
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    throw invalid();
+  }
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("format" in value) ||
+    value.format !== "peel-backup" ||
+    !("version" in value) ||
+    value.version !== 1 ||
+    !("packs" in value)
+  )
+    throw invalid();
+  validatePacks(value.packs);
+  return value.packs.map(cleanPack);
 }
 export function serializeBackup(packs: Pack[]): string {
+  const cleaned = packs.map(cleanPack);
+  // Validate the same schema as import without parsing a second copy of every
+  // embedded media string just to check the JSON we are about to write.
+  validatePacks(cleaned);
   const raw = JSON.stringify({
     format: "peel-backup",
     version: 1,
     exportedAt: new Date().toISOString(),
-    packs: packs.map(cleanPack),
+    packs: cleaned,
   });
-  parseBackup(raw); // Verify the backup can be restored before writing it.
+  if (raw.length > MAX_BACKUP_BYTES)
+    throw new Error("This backup exceeds the 128 MB limit.");
   return raw;
 }
 function sameContent(a: Pack, b: Pack) {
@@ -113,14 +120,36 @@ function sameContent(a: Pack, b: Pack) {
 }
 export function mergeBackup(existing: Pack[], incoming: Pack[]) {
   const packs = [...existing];
+  const ids = new Set(existing.map((pack) => pack.id));
+  const candidates = new Map<string, Pack[]>();
+  // A small metadata key avoids comparing embedded artwork against unrelated
+  // packs. Full content comparison still decides equality within each bucket.
+  const contentKey = (pack: Pack) =>
+    JSON.stringify([
+      pack.name,
+      pack.color,
+      pack.animated,
+      pack.stickers.map((s) => [s.name, s.data.length, s.tray.length]),
+    ]);
+  for (const pack of existing) {
+    const key = contentKey(pack);
+    const bucket = candidates.get(key);
+    if (bucket) bucket.push(pack);
+    else candidates.set(key, [pack]);
+  }
   let added = 0;
   for (const pack of incoming) {
-    if (packs.some((p) => sameContent(p, pack))) continue;
+    const key = contentKey(pack);
+    const bucket = candidates.get(key);
+    if (bucket?.some((p) => sameContent(p, pack))) continue;
     let id = pack.id;
     let suffix = 1;
-    while (packs.some((p) => p.id === id))
-      id = `${pack.id.slice(0, 80)}-restored-${suffix++}`;
-    packs.push({ ...pack, id });
+    while (ids.has(id)) id = `${pack.id.slice(0, 80)}-restored-${suffix++}`;
+    const restored = { ...pack, id };
+    packs.push(restored);
+    ids.add(id);
+    if (bucket) bucket.push(restored);
+    else candidates.set(key, [restored]);
     added++;
   }
   return { packs, added, skipped: incoming.length - added };
