@@ -1,5 +1,5 @@
 import { useTheme } from "./theme";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEventListener } from "expo";
@@ -20,16 +20,27 @@ export function VideoClip({
   const [duration, setDuration] = useState("3");
   const player = useVideoPlayer(asset.uri, (player) => {
     player.muted = true;
-    player.timeUpdateEventInterval = 0.1;
+  });
+  const playing = useRef(false);
+  // Expo VideoPlayer properties control a mutable native handle, not React state.
+  /* eslint-disable react-hooks/immutability -- Expo documents mutating these native player properties. */
+  useEventListener(player, "playingChange", ({ isPlaying }) => {
+    playing.current = isPlaying;
+    // The web player runs a JS interval even while paused unless it is disabled.
+    player.timeUpdateEventInterval = isPlaying ? 0.1 : 0;
   });
   useEventListener(player, "timeUpdate", ({ currentTime }) => {
+    if (!playing.current) {
+      // Also handle a final update emitted while playback is stopping.
+      player.timeUpdateEventInterval = 0;
+      return;
+    }
     if (currentTime >= Number(start) + Number(duration)) {
       player.pause();
-      // Expo VideoPlayer is a mutable native handle, not React state.
-      // eslint-disable-next-line react-hooks/immutability
       player.currentTime = Number(start);
     }
   });
+  /* eslint-enable react-hooks/immutability */
   const valid =
     Number.isFinite(Number(start)) &&
     Number(start) >= 0 &&
@@ -111,7 +122,10 @@ export function VideoClip({
       <Pressable
         accessibilityRole="button"
         disabled={!valid || busy}
-        onPress={() => onImport(Number(start), Number(duration))}
+        onPress={() => {
+          player.pause();
+          onImport(Number(start), Number(duration));
+        }}
         style={{
           padding: 16,
           alignItems: "center",

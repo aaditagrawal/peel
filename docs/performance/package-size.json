@@ -1,0 +1,244 @@
+{
+  "baseline": {
+    "apkBytes": 78186210,
+    "sha256": "df3c13885d97a18006ac2783d0e9e2f50e16702ab4a68de409d5f70340f2affc",
+    "groups": {
+      "other": {
+        "compressedBytes": 176890,
+        "uncompressedBytes": 396753,
+        "entries": 229
+      },
+      "assets": {
+        "compressedBytes": 4459490,
+        "uncompressedBytes": 4459903,
+        "entries": 4
+      },
+      "dex": {
+        "compressedBytes": 18655415,
+        "uncompressedBytes": 49521440,
+        "entries": 5
+      },
+      "native": {
+        "compressedBytes": 50390304,
+        "uncompressedBytes": 50390304,
+        "entries": 52
+      },
+      "resources": {
+        "compressedBytes": 3937194,
+        "uncompressedBytes": 5524528,
+        "entries": 1309
+      }
+    },
+    "fontCount": 26,
+    "hermesBundleBytes": 4446296,
+    "hermesBundleCompressed": false,
+    "architectures": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "identity": [
+      "app.peel.stickers",
+      "13",
+      "1.1.0"
+    ]
+  },
+  "candidate": {
+    "apkBytes": 32913996,
+    "sha256": "b2e3e44dffe5de93f8c313d03ae291b51e525d9355974dfcb747362e1c7cb101",
+    "groups": {
+      "other": {
+        "compressedBytes": 177282,
+        "uncompressedBytes": 396995,
+        "entries": 234
+      },
+      "assets": {
+        "compressedBytes": 4447432,
+        "uncompressedBytes": 4447940,
+        "entries": 4
+      },
+      "dex": {
+        "compressedBytes": 7700315,
+        "uncompressedBytes": 18227076,
+        "entries": 3
+      },
+      "native": {
+        "compressedBytes": 17319773,
+        "uncompressedBytes": 50390304,
+        "entries": 52
+      },
+      "resources": {
+        "compressedBytes": 3070851,
+        "uncompressedBytes": 4110837,
+        "entries": 1191
+      }
+    },
+    "fontCount": 7,
+    "hermesBundleBytes": 4434640,
+    "hermesBundleCompressed": false,
+    "architectures": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "identity": [
+      "app.peel.stickers",
+      "13",
+      "1.1.0"
+    ]
+  },
+  "savedBytes": 45272214,
+  "reductionPercent": 57.9,
+  "preservation": {
+    "allNativeLibrariesByteIdentical": true,
+    "nativeLibraryCount": 52,
+    "usedFontPayloadsByteIdentical": true,
+    "usedFontCount": 5,
+    "unusedGoogleFontVariantsRemoved": 19
+  },
+  "method": "Same source except release settings and precise font imports; identical two ABIs, build flags and isolated validation signing key. Not signed with the production key. APK bytes include signatures and ZIP overhead.",
+  "baselineCommit": "c0b0233f91cd40ced4aa52396111fc238a204c89",
+  "candidateCommit": "1eee8123a5cdbffda954bb462e0f62f81bf49592",
+  "releasedMainReference": {
+    "commit": "295d5f35754d69e526bae7af4ea8c2d9cee8faf0",
+    "tag": "v1.1.0",
+    "apkBytes": 77485562,
+    "sha256": "30acea69c179db2c42b57b32df045b671be3fec57c9b8f7931413ab2188903cf",
+    "groups": {
+      "native": {
+        "compressedBytes": 50386288,
+        "uncompressedBytes": 50386288,
+        "entries": 52
+      },
+      "dex": {
+        "compressedBytes": 17972656,
+        "uncompressedBytes": 49520700,
+        "entries": 5
+      },
+      "resources": {
+        "compressedBytes": 3937194,
+        "uncompressedBytes": 5524528,
+        "entries": 1309
+      }
+    },
+    "source": "Previously verified published v1.1.0 release APK; hash matches its archived release.json. This is an artifact comparison, not a fresh controlled build."
+  },
+  "releasedMainReductionPercent": 57.52,
+  "environment": {
+    "expo": "57.0.26",
+    "reactNative": "0.86.3",
+    "expoBuildProperties": "57.0.22",
+    "jdk": "21.0.12.1",
+    "buildTools": "36.0.0",
+    "ndk": "27.1.12297006"
+  },
+  "staticReleaseVerification": {
+    "audit": {
+      "apk": "artifacts/package-size/candidate.apk",
+      "apkBytes": 32913996,
+      "apkSha256": "b2e3e44dffe5de93f8c313d03ae291b51e525d9355974dfcb747362e1c7cb101",
+      "passed": true,
+      "nativeMethods": {
+        "encode": {
+          "signature": "([Landroid/graphics/Bitmap;IIFZ)[B",
+          "present": true
+        },
+        "openWebp": {
+          "signature": "([B[I)J",
+          "present": true
+        },
+        "readWebp": {
+          "signature": "(JILandroid/graphics/Bitmap;)Z",
+          "present": true
+        },
+        "validateWebp": {
+          "signature": "(J)Z",
+          "present": true
+        },
+        "compliantStaticWebp": {
+          "signature": "([B)Z",
+          "present": true
+        },
+        "closeWebp": {
+          "signature": "(J)V",
+          "present": true
+        }
+      },
+      "nativeLibraries": {
+        "lib/arm64-v8a/libpeelwebp.so": {
+          "jniExports": [
+            "closeWebp",
+            "compliantStaticWebp",
+            "encode",
+            "openWebp",
+            "readWebp",
+            "validateWebp"
+          ],
+          "sha256": "4617ce2bbf6cd16d512bf73ce9577085427569fb139387fc7e38df4e4373ca19",
+          "uncompressedBytes": 726224,
+          "compressedBytes": 358191,
+          "compressionMethod": 8
+        },
+        "lib/x86_64/libpeelwebp.so": {
+          "jniExports": [
+            "closeWebp",
+            "compliantStaticWebp",
+            "encode",
+            "openWebp",
+            "readWebp",
+            "validateWebp"
+          ],
+          "sha256": "cd2192abb896b02ba946fd3155669d8fa56860576020293974c96ec2d636a3b3",
+          "uncompressedBytes": 865928,
+          "compressedBytes": 393381,
+          "compressionMethod": 8
+        }
+      },
+      "mappedClasses": {
+        "converter": "expo.modules.whatsappstickers.OfflineConverter",
+        "module": "ya.b",
+        "provider": "expo.modules.whatsappstickers.StickerProvider",
+        "autolinkingProvider": "K8.d"
+      },
+      "checks": {
+        "converterClassNamePreserved": true,
+        "libraryLoadRetained": true,
+        "moduleConstructorRetained": true,
+        "moduleDirectAutolinkingReference": true,
+        "jsModuleNameRetained": true,
+        "convertNameRetained": true,
+        "addPackNameRetained": true,
+        "progressEventNameRetained": true,
+        "providerClassNamePreserved": true,
+        "providerConstructorRetained": true,
+        "providerManifestName": true,
+        "providerAuthority": true,
+        "providerPermission": true,
+        "compressedLibrariesExtracted": true
+      },
+      "limitations": [
+        "Static inspection of actual release DEX, manifest and ELF exports; no device runtime validation.",
+        "Unchanged native methods may be omitted from R8 mapping.txt; actual DEX declarations verified instead."
+      ]
+    },
+    "obfuscatedExpoModule": "ya.b",
+    "providerName": "expo.modules.whatsappstickers.StickerProvider",
+    "providerAuthority": "app.peel.stickers.stickers",
+    "providerReadPermission": "com.whatsapp.sticker.READ",
+    "extractNativeLibs": true,
+    "apkSignaturesVerified": true,
+    "comparisonSignersMatch": true,
+    "releaseIsNotDebuggable": true
+  },
+  "runtimeVerification": "Not run on the shrunk release. Dedicated emulator launch was blocked by KVM permissions; existing emulator belongs to another concurrent app test. Earlier converter instrumentation predates release shrinking.",
+  "reproduce": {
+    "method": "Use clean outputs for each source revision; otherwise incremental React asset copying can retain removed font files. Supply the same isolated validation-only PEEL_KEYSTORE_* environment variables to both builds. Keep production signing material separate.",
+    "prebuild": "bunx expo prebuild --platform android --no-install",
+    "release": "./android/gradlew -p android :app:clean :app:assembleRelease -PreactNativeArchitectures=arm64-v8a,x86_64",
+    "baselineOverrides": [
+      "-Pandroid.enableMinifyInReleaseBuilds=false",
+      "-Pandroid.enableShrinkResourcesInReleaseBuilds=false",
+      "-Pexpo.useLegacyPackaging=false",
+      "-Pandroid.enableBundleCompression=false"
+    ],
+    "inspection": "Inspect ZIP central-directory compressed/uncompressed sizes and SHA256 of each native library and required font after decompression. Check aapt badging/manifest and apksigner verify. Native/DEX/font counts are archive-entry counts."
+  }
+}
