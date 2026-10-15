@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { texturedPhotoFixture } from "./media-fixtures";
 const exec = promisify(execFile);
 test("photo is fitted, not distorted, with transparent padding and compliant tray", async () => {
   const input = await sharp({
@@ -31,6 +32,21 @@ test("photo is fitted, not distorted, with transparent padding and compliant tra
   const tray = await sharp(Buffer.from(output.tray, "base64")).metadata();
   assert.equal(tray.width, 96);
   assert.equal(tray.height, 96);
+});
+
+test("textured images retain fine detail close to the byte cap", async () => {
+  const input = await texturedPhotoFixture();
+  const result = await convertSticker(input);
+  const output = Buffer.from(result.data, "base64");
+  const reference = await sharp(input).ensureAlpha().raw().toBuffer();
+  const actual = await sharp(output).ensureAlpha().raw().toBuffer();
+  let squared = 0;
+  for (let i = 0; i < actual.length; i += 4)
+    for (let c = 0; c < 3; c++)
+      squared += (reference[i + c] - actual[i + c]) ** 2;
+  const psnr = 10 * Math.log10(255 ** 2 / (squared / (512 * 512 * 3)));
+  assert.ok(psnr > 34.8, `fine detail PSNR was ${psnr.toFixed(2)} dB`);
+  assert.ok(output.length <= 100 * 1024);
 });
 test("GIF animation survives with timing and dimensions intact", async () => {
   const frame1 = Buffer.alloc(40 * 40 * 4);
@@ -204,6 +220,64 @@ test(
 );
 
 test(
+  "video quality retries keep the selected start time and clip duration",
+  { timeout: 60_000 },
+  async () => {
+    const dir = await mkdtemp(join(tmpdir(), "peel-trim-retry-"));
+    try {
+      const path = join(dir, "colors.mp4");
+      await exec("ffmpeg", [
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=red:s=512x256:r=15:d=1[red];color=c=lime:s=512x256:r=15:d=2[green];[red][green]concat=n=2:v=1:a=0,noise=alls=100:allf=t+u:all_seed=41",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "0",
+        "-pix_fmt",
+        "yuv420p",
+        path,
+      ]);
+      const result = await convertVideo(await readFile(path), 1, 1);
+      assert.ok(
+        result.quality < 95,
+        "fixture must exercise retries after the first encode",
+      );
+      assert.ok(result.bytes <= 500 * 1024);
+      const output = Buffer.from(result.data, "base64");
+      const meta = await sharp(output, { animated: true }).metadata();
+      assert.ok(
+        Math.abs((meta.delay?.reduce((sum, n) => sum + n, 0) || 0) - 1000) <=
+          70,
+      );
+      const pixels = await sharp(output, { page: 0 })
+        .ensureAlpha()
+        .raw()
+        .toBuffer();
+      let red = 0;
+      let green = 0;
+      for (let y = 128; y < 384; y++) {
+        for (let x = 0; x < 512; x++) {
+          const i = (y * 512 + x) * 4;
+          red += pixels[i];
+          green += pixels[i + 1];
+        }
+      }
+      assert.ok(
+        (green - red) / (512 * 256) > 80,
+        "selected clip must contain the green second, not the red opening",
+      );
+      assert.equal(pixels[3], 0);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
   "detailed transparent images automatically fit the static sticker cap",
   { timeout: 60_000 },
   async () => {
@@ -259,4 +333,175 @@ test("detail fitting keeps motion that falls between temporal samples", async ()
     meta.delay?.reduce((sum, n) => sum + n, 0),
     400,
   );
+});
+
+test("already compliant static and animated WebP retain their original encoded pixels", async () => {
+  const first = Buffer.alloc(512 * 512 * 4);
+  const second = Buffer.alloc(first.length);
+  for (let i = 0; i < first.length; i += 4) {
+    first[i] = 240;
+    first[i + 3] = 180;
+    second[i + 1] = 210;
+    second[i + 3] = 150;
+  }
+  const still = await sharp(first, {
+    raw: { width: 512, height: 512, channels: 4 },
+  })
+    .webp({ quality: 61 })
+    .toBuffer();
+  const animated = await sharp(Buffer.concat([first, second]), {
+    raw: { width: 512, height: 1024, channels: 4, pageHeight: 512 },
+  })
+    .webp({ quality: 61, delay: [90, 170], loop: 0 })
+    .toBuffer();
+  for (const input of [still, animated]) {
+    const result = await convertSticker(input);
+    assert.deepEqual(Buffer.from(result.data, "base64"), input);
+    assert.equal(result.bytes, input.length);
+    assert.equal(result.animated, input === animated);
+  }
+});
+
+test("a corrupt later WebP frame is rejected even when its metadata is valid", async () => {
+  const frames = Buffer.concat([
+    Buffer.alloc(512 * 512 * 4, 255),
+    Buffer.alloc(512 * 512 * 4, 70),
+  ]);
+  const input = await sharp(frames, {
+    raw: { width: 512, height: 1024, channels: 4, pageHeight: 512 },
+  })
+    .webp({ lossless: true, delay: [100, 200], loop: 0 })
+    .toBuffer();
+  let lastFrame = 0;
+  for (let offset = 12; offset + 8 < input.length;) {
+    const size = input.readUInt32LE(offset + 4);
+    if (input.toString("ascii", offset, offset + 4) === "ANMF")
+      lastFrame = offset;
+    offset += 8 + size + (size % 2);
+  }
+  assert.ok(lastFrame > 0);
+  const corrupt = Buffer.from(input);
+  const size = corrupt.readUInt32LE(lastFrame + 4);
+  // Keep the ANMF/VP8L headers intact and destroy only the final frame pixels.
+  corrupt.fill(0, lastFrame + 8 + 16 + 8 + 5, lastFrame + 8 + size);
+  assert.equal((await sharp(corrupt, { animated: true }).metadata()).pages, 2);
+  await assert.rejects(convertSticker(corrupt));
+});
+
+test("finite loops and sub-minimum WebP frame delays are normalized rather than preserved", async () => {
+  const frames = Buffer.concat([
+    Buffer.alloc(512 * 512 * 4, 255),
+    Buffer.alloc(512 * 512 * 4, 70),
+  ]);
+  for (const options of [
+    { loop: 2, delay: [100, 200] },
+    { loop: 0, delay: [1, 7] },
+  ]) {
+    const input = await sharp(frames, {
+      raw: { width: 512, height: 1024, channels: 4, pageHeight: 512 },
+    })
+      .webp({ lossless: true, ...options })
+      .toBuffer();
+    if (options.loop === 0) {
+      // The Sharp encoder normalizes short delays while writing. Put actual
+      // short delays into ANMF to exercise an externally supplied WebP.
+      let frame = 0;
+      for (let offset = 12; offset + 8 < input.length;) {
+        const size = input.readUInt32LE(offset + 4);
+        if (input.toString("ascii", offset, offset + 4) === "ANMF")
+          input.writeUIntLE(options.delay[frame++], offset + 20, 3);
+        offset += 8 + size + (size % 2);
+      }
+    }
+    const result = await convertSticker(input);
+    const output = Buffer.from(result.data, "base64");
+    assert.notDeepEqual(output, input);
+    const meta = await sharp(output, { animated: true }).metadata();
+    assert.equal(meta.loop, 0);
+    assert.ok(meta.delay?.every((n) => n >= 8));
+    assert.deepEqual(meta.delay, options.loop ? [100, 200] : [100, 100]);
+    assert.ok(output.length <= 500 * 1024);
+  }
+});
+
+test("oriented metadata-bearing WebP is rendered upright and stripped before delivery", async () => {
+  const pixels = Buffer.alloc(512 * 512 * 3);
+  for (let y = 0; y < 512; y++) {
+    for (let x = 0; x < 512; x++) {
+      pixels[(y * 512 + x) * 3 + (x < 256 ? 0 : 2)] = 255;
+    }
+  }
+  const input = await sharp(pixels, {
+    raw: { width: 512, height: 512, channels: 3 },
+  })
+    .withMetadata({ orientation: 6 })
+    .webp({ lossless: true })
+    .toBuffer();
+  const result = await convertSticker(input);
+  const output = Buffer.from(result.data, "base64");
+  assert.notDeepEqual(output, input);
+  const meta = await sharp(output).metadata();
+  assert.equal(meta.orientation, undefined);
+  assert.equal(meta.hasProfile, false);
+  assert.equal(meta.exif, undefined);
+  const reference = await sharp(input).autoOrient().raw().toBuffer();
+  assert.deepEqual(await sharp(output).raw().toBuffer(), reference);
+  assert.ok(output.length <= 100 * 1024);
+});
+
+test("WebP with trailing bytes is normalized to a complete RIFF container", async () => {
+  const input = await sharp({
+    create: { width: 512, height: 512, channels: 4, background: "#b34a4acc" },
+  })
+    .webp({ lossless: true })
+    .toBuffer();
+  const trailing = Buffer.concat([
+    input,
+    Buffer.from("unrelated trailing bytes"),
+  ]);
+  const result = await convertSticker(trailing);
+  const output = Buffer.from(result.data, "base64");
+  assert.notDeepEqual(output, trailing);
+  assert.equal(output.readUInt32LE(4) + 8, output.length);
+  assert.ok(output.length <= 100 * 1024);
+});
+
+test("raw video fallback preserves frame order, motion, alpha and the exact timeline", async () => {
+  const { fitDetailedSticker } = await import("./fit-detailed-sticker");
+  const side = 512;
+  const pages = 6;
+  const pixels = Buffer.alloc(side * side * pages * 4);
+  for (let page = 0; page < pages; page++) {
+    for (let y = 128; y < 384; y++) {
+      for (let x = 64; x < 448; x++) {
+        const i = ((page * side + y) * side + x) * 4;
+        pixels[i + (page < 3 ? 0 : 1)] = 255;
+        pixels[i + 3] = 255;
+      }
+    }
+  }
+  const delays = [67, 66, 67, 67, 66, 67];
+  const data = await fitDetailedSticker(pixels, true, delays, 500 * 1024, {
+    width: side,
+    height: side * pages,
+    channels: 4,
+    pageHeight: side,
+  });
+  const meta = await sharp(data, { animated: true }).metadata();
+  assert.ok((meta.pages || 1) > 1);
+  assert.equal(
+    meta.delay?.reduce((sum, n) => sum + n, 0),
+    400,
+  );
+  assert.equal(meta.pageHeight, side);
+  const first = await sharp(data, { page: 0 }).ensureAlpha().raw().toBuffer();
+  const last = await sharp(data, { page: (meta.pages || 1) - 1 })
+    .ensureAlpha()
+    .raw()
+    .toBuffer();
+  const center = (256 * side + 256) * 4;
+  assert.ok(first[center] > 200 && first[center + 1] < 40);
+  assert.ok(last[center + 1] > 200 && last[center] < 40);
+  assert.equal(first[3], 0);
+  assert.equal(last[3], 0);
 });
