@@ -1,6 +1,6 @@
 {
   "baselineCommit": "295d5f35754d69e526bae7af4ea8c2d9cee8faf0",
-  "candidate": "This pull request",
+  "candidateCommit": "213ff8cf872d0975b86d1e8b146bc53bbd6efee0",
   "environment": {
     "node": "v24.21.0",
     "bun": "1.4.3",
