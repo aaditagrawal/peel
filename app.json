@@ -44,6 +44,17 @@
           "microphonePermission": false
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": ["arm64-v8a", "x86_64"],
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "useLegacyPackaging": true
+          }
+        }
+      ],
       "./plugins/with-release-signing"
     ],
     "scheme": "peel"
