@@ -1,0 +1,356 @@
+{
+  "baselineCommit": "295d5f35754d69e526bae7af4ea8c2d9cee8faf0",
+  "candidateCommit": "213ff8cf872d0975b86d1e8b146bc53bbd6efee0",
+  "environment": {
+    "node": "v24.21.0",
+    "bun": "1.4.3",
+    "arch": "x86_64",
+    "sharp": "0.35.5",
+    "libvips": "8.18.7",
+    "libwebp": "1.6.0",
+    "native": "Android 35 x86_64 emulator; Debug builds with identical Gradle flags"
+  },
+  "method": {
+    "web": "Synthetic deterministic fixtures; both video runs reuse identical source MP4 bytes. PSNR measures premultiplied RGB in the first decoded frame. Timings are single local samples with concurrent work and are not latency guarantees.",
+    "backup": "Five runs with exposed GC; first sample is cold. Serialized JSON has 100 packs, 1000 embedded stickers, and 66,660,766 ASCII bytes. Merge fixture has 500 existing and 500 distinct incoming packs.",
+    "native": "Exact target production files and candidate ran the same current quality harness. Deterministic input hashes match. Motion conversionMs excludes harness validation; motion ms includes it. Single emulator samples, not stable latency estimates. Artwork PSNR composites over black and white backgrounds; noise PSNR measures first-frame RGB. These are not directly comparable to the web premultiplied RGB metric.",
+    "library": "Browser stress fixtures with 300 packs, three previews each. Desktop viewport 1440x900; mobile 390x844. Settled-top counts differ from transient maximum while scrolling. Animated-source comparison uses the already-virtualized 36 mounted desktop previews before and after visibility gating."
+  },
+  "web": {
+    "originMain": [
+      {
+        "name": "text-edges",
+        "ms": 108.9,
+        "bytes": 10580,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": "lossless"
+      },
+      {
+        "name": "photo-texture",
+        "ms": 1399.6,
+        "bytes": 93496,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": 33.84
+      },
+      {
+        "name": "webp-reimport",
+        "ms": 1198.8,
+        "bytes": 95738,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": 36.15
+      },
+      {
+        "name": "detailed-alpha",
+        "ms": 5149.2,
+        "bytes": 72506,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 63.599,
+        "premultipliedPsnr": 13.12
+      },
+      {
+        "name": "detailed-animation",
+        "ms": 21697.6,
+        "bytes": 385156,
+        "frames": 13,
+        "durationMs": 2400,
+        "alphaMeanError": 0.498,
+        "premultipliedPsnr": 14.68
+      }
+    ],
+    "candidate": [
+      {
+        "name": "text-edges",
+        "ms": 161,
+        "bytes": 10580,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": "lossless"
+      },
+      {
+        "name": "photo-texture",
+        "ms": 1623.1,
+        "bytes": 102206,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": 35.25
+      },
+      {
+        "name": "webp-reimport",
+        "ms": 55.4,
+        "bytes": 93496,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": "lossless"
+      },
+      {
+        "name": "detailed-alpha",
+        "ms": 5267.4,
+        "bytes": 72506,
+        "frames": 1,
+        "durationMs": 0,
+        "alphaMeanError": 63.599,
+        "premultipliedPsnr": 13.12
+      },
+      {
+        "name": "detailed-animation",
+        "ms": 23860.1,
+        "bytes": 385156,
+        "frames": 13,
+        "durationMs": 2400,
+        "alphaMeanError": 0.498,
+        "premultipliedPsnr": 14.68
+      }
+    ],
+    "videoOriginMain": [
+      {
+        "name": "simple-video",
+        "ms": 402.6,
+        "bytes": 192792,
+        "quality": 95,
+        "frames": 15,
+        "durationMs": 999,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": 35.14
+      },
+      {
+        "name": "detailed-video",
+        "ms": 11206.2,
+        "bytes": 383364,
+        "quality": 65,
+        "frames": 23,
+        "durationMs": 2999,
+        "alphaMeanError": 0.787,
+        "premultipliedPsnr": 28.13
+      }
+    ],
+    "videoCandidate": [
+      {
+        "name": "simple-video",
+        "ms": 364.9,
+        "bytes": 192792,
+        "quality": 95,
+        "frames": 15,
+        "durationMs": 999,
+        "alphaMeanError": 0,
+        "premultipliedPsnr": 35.14
+      },
+      {
+        "name": "detailed-video",
+        "ms": 5766.8,
+        "bytes": 402104,
+        "quality": 65,
+        "frames": 23,
+        "durationMs": 3000,
+        "alphaMeanError": 0.787,
+        "premultipliedPsnr": 28.49
+      }
+    ]
+  },
+  "backup": {
+    "originMain": {
+      "backupBytes": 66660766,
+      "serializeMs": [
+        627.2,
+        415.3,
+        460.2,
+        453.5,
+        424.5
+      ],
+      "heapDeltaMiB": [
+        196.3,
+        132.1,
+        132.1,
+        132.1,
+        132.1
+      ],
+      "mergeMs": 57.74,
+      "mergeNameReads": 625250,
+      "mergedPacks": 1000,
+      "maxRSSMiB": 491.2
+    },
+    "candidate": {
+      "backupBytes": 66660766,
+      "serializeMs": [
+        478.3,
+        266.7,
+        282,
+        351.9,
+        430.8
+      ],
+      "heapDeltaMiB": [
+        131.5,
+        63.8,
+        63.8,
+        63.8,
+        63.8
+      ],
+      "mergeMs": 5.05,
+      "mergeNameReads": 1500,
+      "mergedPacks": 1000,
+      "maxRSSMiB": 358.7
+    }
+  },
+  "reproduce": {
+    "web": "PEEL_CONVERTER_DIR=/path/to/origin-main-server node --import tsx server/media.bench.ts baseline; node --import tsx server/media.bench.ts candidate",
+    "video": "Add --video-only to the web benchmark commands; source MP4 files are reused from artifacts/quality-web.",
+    "backup": "node --expose-gc --import tsx server/backup.bench.ts",
+    "native": "Build :whatsapp-stickers:assembleDebug and :whatsapp-stickers:assembleDebugAndroidTest with -PreactNativeArchitectures=x86_64, install the module test APK, then run expo.modules.whatsappstickers.test/expo.modules.whatsappstickers.ConverterInstrumentation. Add -e qualityOnly true for deterministic quality fixtures; add -e qualityBaseline true only for the target implementation."
+  },
+  "native": {
+    "originMain": {
+      "artwork": {
+        "bytes": 99532,
+        "ms": 611,
+        "psnr": 21.251396578206702,
+        "edgePsnr": 19.85148094615074,
+        "maxAlphaError": 0
+      },
+      "motion": {
+        "bytes": 2724,
+        "ms": 144,
+        "conversionMs": 144,
+        "frames": 4,
+        "duration": 288,
+        "exact": false
+      },
+      "noise": {
+        "bytes": 379234,
+        "ms": 6814,
+        "frames": 6,
+        "psnr": 11.302363356547179
+      },
+      "static": {
+        "bytes": 67502,
+        "ms": 158,
+        "exact": false
+      }
+    },
+    "prHead": {
+      "artwork": {
+        "bytes": 99532,
+        "ms": 482,
+        "psnr": 21.251396578206702,
+        "edgePsnr": 19.85148094615074,
+        "maxAlphaError": 0
+      },
+      "motion": {
+        "bytes": 12108,
+        "ms": 96,
+        "conversionMs": 46,
+        "frames": 18,
+        "duration": 288,
+        "exact": true
+      },
+      "noise": {
+        "bytes": 504814,
+        "ms": 6557,
+        "frames": 8,
+        "psnr": 11.302363356547179
+      },
+      "static": {
+        "bytes": 22066,
+        "ms": 22,
+        "exact": true
+      }
+    },
+    "decodedComparison": {
+      "artwork": {
+        "native-origin-main": {
+          "decodedSha256": "930787dff5e0fc3fa6186a68a2df3def2144c9092c092168e26dbb9d487d87d2",
+          "identicalToSource": false,
+          "maxAlphaError": 0,
+          "psnr": 21.251396578206702
+        },
+        "native-pr-head": {
+          "decodedSha256": "930787dff5e0fc3fa6186a68a2df3def2144c9092c092168e26dbb9d487d87d2",
+          "identicalToSource": false,
+          "maxAlphaError": 0,
+          "psnr": 21.251396578206702
+        },
+        "identicalDecodedOutputs": true
+      },
+      "noise": {
+        "native-origin-main": {
+          "decodedSha256": "67b5b872bbb19ff54eb018adfec72037662c8e6436d55fe712a6dbe523350594",
+          "identicalToSource": false,
+          "maxAlphaError": 0,
+          "psnr": 11.302363356547179
+        },
+        "native-pr-head": {
+          "decodedSha256": "67b5b872bbb19ff54eb018adfec72037662c8e6436d55fe712a6dbe523350594",
+          "identicalToSource": false,
+          "maxAlphaError": 0,
+          "psnr": 11.302363356547179
+        },
+        "identicalDecodedOutputs": true
+      },
+      "static": {
+        "native-origin-main": {
+          "decodedSha256": "317b785475d843f9d9510e3cc7d7a23e8b1cb0bec96eddb79965c609bb8ef639",
+          "identicalToSource": false,
+          "maxAlphaError": 0,
+          "psnr": 35.59092932197004
+        },
+        "native-pr-head": {
+          "decodedSha256": "fbf34ab9d9aae6d37ddc84ba0be2e0962dc67288e522eb5749b6b0aa1b147f89",
+          "identicalToSource": true,
+          "maxAlphaError": 0,
+          "psnr": null
+        },
+        "identicalDecodedOutputs": false
+      }
+    },
+    "sourceFixtureHashes": {
+      "artwork.png": {
+        "originMain": "42e91ed2a5b67bb1063e12e91081e3215ac4eed59cdf572f767d9794a4b34f3c",
+        "prHead": "42e91ed2a5b67bb1063e12e91081e3215ac4eed59cdf572f767d9794a4b34f3c"
+      },
+      "motion.webp": {
+        "originMain": "44d39ecc45cd30d9f9f0fe8728915d18ffaa2784080c71fe2471bd28c4db8a48",
+        "prHead": "44d39ecc45cd30d9f9f0fe8728915d18ffaa2784080c71fe2471bd28c4db8a48"
+      },
+      "noise.png": {
+        "originMain": "d4ab0e0e18caba96740047852daad7bf2ed5879f299df8eb3a7527ab6be377df",
+        "prHead": "d4ab0e0e18caba96740047852daad7bf2ed5879f299df8eb3a7527ab6be377df"
+      },
+      "static-source.webp": {
+        "originMain": "c15203a21c3749099befee7461c7c5c044b16eb9e6fa674e36b657f0137f3c69",
+        "prHead": "c15203a21c3749099befee7461c7c5c044b16eb9e6fa674e36b657f0137f3c69"
+      }
+    }
+  },
+  "library": {
+    "fixturePacks": 300,
+    "previewsPerPack": 3,
+    "allMountedBaseline": {
+      "cards": 300,
+      "imageNodes": 900
+    },
+    "virtualizedDesktopSettledTop": {
+      "cards": 12,
+      "imageNodes": 36
+    },
+    "virtualizedMobileSettledTop": {
+      "cards": 6,
+      "imageNodes": 18
+    },
+    "virtualizedMaximumObservedDuringScroll": {
+      "cards": 30,
+      "imageNodes": 90
+    },
+    "visibleAnimationSourcesDesktopBeforeGating": 36,
+    "visibleAnimationSourcesDesktopAfterGating": 12,
+    "backgroundAnimationSourcesWithModalOpen": 0,
+    "selectedModalFullResolutionImages": 3
+  }
+}

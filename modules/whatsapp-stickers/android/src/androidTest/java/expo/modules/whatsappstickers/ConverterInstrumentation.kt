@@ -11,11 +11,22 @@ import android.util.Base64
 import java.io.File
 
 class ConverterInstrumentation : Instrumentation() {
-  override fun onCreate(arguments: Bundle?) { super.onCreate(arguments); start() }
+  private var qualityOnly = false
+  private var qualityBaseline = false
+  override fun onCreate(arguments: Bundle?) {
+    qualityOnly = arguments?.getString("qualityOnly") == "true"
+    qualityBaseline = arguments?.getString("qualityBaseline") == "true"
+    super.onCreate(arguments); start()
+  }
   override fun onStart() {
     val results = Bundle()
     val timings = StringBuilder()
     try {
+      if (qualityOnly) {
+        results.putString("stream", ConversionQualityBench.run(targetContext, qualityBaseline) + "\nPASS: conversion quality fixtures.\n")
+        finish(Activity.RESULT_OK, results)
+        return
+      }
       val root = File(targetContext.cacheDir, "converter-test").apply { mkdirs() }
       val photo = File(root, "photo.png")
       val bitmap = Bitmap.createBitmap(1200, 600, Bitmap.Config.ARGB_8888)
@@ -76,7 +87,33 @@ class ConverterInstrumentation : Instrumentation() {
         chunk += 8 + size + (size and 1)
       }
       webpSource.writeBytes(webpBytes)
+      // Sampling a long source frame must reuse its pixels without retaining
+      // them after the next source frame or the decoder's lifetime.
+      val openWebp = OfflineConverter::class.java.getDeclaredMethod("openWebp", ByteArray::class.java, IntArray::class.java).apply { isAccessible = true }
+      val readWebp = OfflineConverter::class.java.getDeclaredMethod("readWebp", Long::class.javaPrimitiveType, Int::class.javaPrimitiveType, Bitmap::class.java).apply { isAccessible = true }
+      val closeWebp = OfflineConverter::class.java.getDeclaredMethod("closeWebp", Long::class.javaPrimitiveType).apply { isAccessible = true }
+      val first = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+      val sampled = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+      val reference = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+      val cachedReader = openWebp.invoke(OfflineConverter, webpBytes, IntArray(1)) as Long
+      try {
+        check(readWebp.invoke(OfflineConverter, cachedReader, 0, first) == true)
+        check(readWebp.invoke(OfflineConverter, cachedReader, 100, sampled) == true)
+        check(first.sameAs(sampled)) { "Sampling inside one WebP frame changed pixels." }
+        for (time in listOf(231, 300)) {
+          val freshReader = openWebp.invoke(OfflineConverter, webpBytes, IntArray(1)) as Long
+          try {
+            check(readWebp.invoke(OfflineConverter, cachedReader, time, sampled) == true)
+            check(readWebp.invoke(OfflineConverter, freshReader, time, reference) == true)
+            check(sampled.sameAs(reference)) { "WebP canvas cache retained a previous frame at $time ms." }
+          } finally { closeWebp.invoke(OfflineConverter, freshReader) }
+        }
+      } finally {
+        closeWebp.invoke(OfflineConverter, cachedReader)
+        first.recycle(); sampled.recycle(); reference.recycle()
+      }
       val reimported = checkFile(webpSource, true)
+      check(reimported.contentEquals(webpBytes)) { "Compliant animated WebP was re-encoded." }
       check(animationDuration(reimported) == animationDuration(webpBytes)) { "WebP import changed duration." }
       val malformedWebp = File(root, "broken.webp").apply { writeBytes(webpBytes.copyOf(40)) }
       check(runCatching { OfflineConverter.convert(targetContext, malformedWebp.toURI().toString(), 0.0, 0.0) }.isFailure)
@@ -96,6 +133,26 @@ class ConverterInstrumentation : Instrumentation() {
         val nativeEncode = OfflineConverter::class.java.getDeclaredMethod("encode", Array<Bitmap>::class.java,
           Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Float::class.javaPrimitiveType, Boolean::class.javaPrimitiveType)
         nativeEncode.isAccessible = true
+        val alphaGrid = Bitmap.createBitmap(512, 512, Bitmap.Config.ARGB_8888)
+        try {
+          // Primary channels remain exactly representable through Android's
+          // premultiplied WebP decode even at very low alpha values.
+          for (y in 0 until 512) for (x in 0 until 512)
+            alphaGrid.setPixel(x, y, Color.argb(x / 2,
+              if (y and 1 == 0) 255 else 0,
+              if (y and 2 == 0) 255 else 0,
+              if (y and 4 == 0) 255 else 0))
+          val losslessAlpha = nativeEncode.invoke(OfflineConverter, arrayOf(alphaGrid), 100, 100, 100f, true) as ByteArray
+          val decodedAlpha = BitmapFactory.decodeByteArray(losslessAlpha, 0, losslessAlpha.size)
+          try {
+            for (y in 0 until 512) for (x in 0 until 512) {
+              val expected = alphaGrid.getPixel(x, y)
+              val actual = decodedAlpha.getPixel(x, y)
+              check(expected == actual) { "Native ARGB import changed lossless color or alpha at $x,$y: ${Integer.toHexString(expected)} != ${Integer.toHexString(actual)}." }
+            }
+          }
+          finally { decodedAlpha.recycle() }
+        } finally { alphaGrid.recycle() }
         val oversized = nativeEncode.invoke(OfflineConverter, noisyFrames, 67, 804, 100f, true)
         check(oversized is ByteArray && oversized.isEmpty()) { "Oversized successful encode must request a compression retry." }
         // These frames cannot fit using the old quality-only ladder. Exercise
@@ -148,7 +205,7 @@ class ConverterInstrumentation : Instrumentation() {
       val corrupt = File(root, "corrupt.png").apply { writeText("not an image") }
       check(runCatching { OfflineConverter.convert(targetContext, corrupt.toURI().toString(), 0.0, 0.0) }.isFailure)
       check(runCatching { OfflineConverter.convert(targetContext, File(root, "clip.mp4").toURI().toString(), 20.0, 1.0) }.isFailure)
-      results.putString("stream", timings.toString() + "PASS: offline photo, GIF, animated WebP with unequal timing, corrupt WebP, long WebP rejection, video, detailed GIF compression fallback, dimensions, transparency, tray, byte limits, corrupt input and invalid clip range.\n")
+      results.putString("stream", timings.toString() + "PASS: offline photo, GIF, animated WebP with unequal timing and cached frame boundaries, corrupt WebP, long WebP rejection, video, detailed GIF compression fallback, lossless alpha/color, dimensions, transparency, tray, byte limits, corrupt input and invalid clip range.\n")
       finish(Activity.RESULT_OK, results)
     } catch (error: Throwable) {
       results.putString("stream", error.stackTraceToString())

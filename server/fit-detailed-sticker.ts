@@ -17,11 +17,13 @@ export async function fitDetailedSticker(
   animated: boolean,
   delays: number[],
   limit: number,
+  raw?: { width: number; height: number; channels: 4; pageHeight: number },
 ): Promise<Buffer> {
   for (const { side, fps } of fallbackSteps) {
     const { data, info } = await sharp(input, {
       animated,
       limitInputPixels: 100_000_000,
+      ...(raw ? { raw } : {}),
     })
       .autoOrient()
       .resize(side, side, { fit: "contain", background: "#00000000" })
@@ -73,18 +75,20 @@ export async function fitDetailedSticker(
     }
     // Resize separately: Sharp's raw pageHeight is not updated by resize, so
     // resizing a raw animation stack can turn it into a malformed static image.
-    const expanded: Buffer[] = [];
-    for (const frame of frames) {
-      expanded.push(
-        await sharp(frame, {
-          raw: { width: side, height: side, channels: 4 },
-        })
-          .resize(512, 512, { kernel: "cubic" })
-          .raw()
-          .toBuffer(),
-      );
+    // Fill the final animation buffer one frame at a time. Keeping every
+    // expanded frame before Buffer.concat would retain two full-size copies.
+    const expandedFrameBytes = 512 * 512 * 4;
+    const expanded = Buffer.alloc(expandedFrameBytes * frames.length);
+    for (const [index, frame] of frames.entries()) {
+      const pixels = await sharp(frame, {
+        raw: { width: side, height: side, channels: 4 },
+      })
+        .resize(512, 512, { kernel: "cubic" })
+        .raw()
+        .toBuffer();
+      pixels.copy(expanded, index * expandedFrameBytes);
     }
-    const candidate = await sharp(Buffer.concat(expanded), {
+    const candidate = await sharp(expanded, {
       raw: {
         width: 512,
         height: 512 * frames.length,
