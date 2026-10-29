@@ -5,7 +5,6 @@ import Constants from "expo-constants";
 import { makePacks, appendImported } from "../import-packs";
 import {
   FlatList,
-  type ViewToken,
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
@@ -132,7 +131,7 @@ export default function Home() {
     () => new Set(),
   );
   const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<Pack | null>[] }) => {
+    ({ viewableItems }: { viewableItems: { item: Pack | null }[] }) => {
       const ids = new Set(
         viewableItems.flatMap(({ item }) => (item?.animated ? [item.id] : [])),
       );
@@ -664,7 +663,7 @@ export default function Home() {
                 <Label style={{ textAlign: "center", padding: 16 }}>
                   No matching packs.
                 </Label>
-              ) : null
+              ) : undefined
             }
           />
         ) : (
