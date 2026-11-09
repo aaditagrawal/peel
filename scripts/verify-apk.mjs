@@ -23,8 +23,10 @@ const expected = (process.env.PEEL_SIGNING_CERT_SHA256 || "")
   .replaceAll(":", "")
   .trim()
   .toLowerCase();
+const productionCertificate =
+  "73f6873772c4d869c4219d7b828221a43c6cb11213c8518f01d2c22b3525a2aa";
 if (
-  !/^[a-f0-9]{64}$/.test(expected) ||
+  expected !== productionCertificate ||
   digests.length !== 1 ||
   digests[0] !== expected
 ) {
@@ -56,9 +58,38 @@ if (
 }
 if (/^application-debuggable/m.test(badging))
   throw new Error("Release APK must not be debuggable");
+if (!/^sdkVersion:'24'$/m.test(badging))
+  throw new Error("Ordinary releases must retain Android API 24 support");
 const abis = badging.match(/^native-code: (.+)$/m)?.[1];
-if (!abis?.includes("'arm64-v8a'") || !abis.includes("'x86_64'"))
+if (abis?.split(" ").sort().join(" ") !== "'arm64-v8a' 'x86_64'")
   throw new Error("APK must include both supported 64-bit architectures");
+for (const api of [24, 27, 28, 32, 33, 37]) {
+  const verified = execFileSync(
+    join(tools, "apksigner"),
+    [
+      "verify",
+      "--min-sdk-version",
+      String(api),
+      "--max-sdk-version",
+      String(api),
+      "--print-certs",
+      apk,
+    ],
+    { encoding: "utf8" },
+  );
+  const current = [
+    ...verified.matchAll(
+      /^Signer #\d+ certificate SHA-256 digest: ([a-f0-9]+)$/gim,
+    ),
+  ];
+  if (
+    current.length !== 1 ||
+    current[0][1].toLowerCase() !== productionCertificate
+  )
+    throw new Error(
+      `Production signer must remain unchanged on Android API ${api}`,
+    );
+}
 const sha256 = createHash("sha256").update(readFileSync(apk)).digest("hex");
 const metadata = {
   version: config.version,

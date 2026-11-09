@@ -17,3 +17,7 @@ Android bundles Google libwebp under its BSD-style license. Source and license a
 ## Fonts
 
 DM Sans and DM Mono by Colophon Foundry are bundled under the SIL Open Font License 1.1. License texts are included in `licenses/DM-Sans-OFL.txt` and `licenses/DM-Mono-OFL.txt`.
+
+## fflate
+
+ZIP import uses fflate by Arjun Barrett under the MIT license. Source: https://github.com/101arrowz/fflate. License text is included in `licenses/fflate-MIT.txt`.

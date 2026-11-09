@@ -3,6 +3,8 @@ import { useTheme } from "../theme";
 import { useCallback, useMemo, useRef, useState } from "react";
 import Constants from "expo-constants";
 import { makePacks, appendImported } from "../import-packs";
+import { importFiles, type ImportSource } from "../file-import";
+import { readArchive, withImage } from "../zip-files";
 import {
   FlatList,
   type ViewToken,
@@ -36,6 +38,8 @@ import {
 } from "../pack-card";
 import { VideoClip } from "../video-clip";
 import { NameEditor } from "../name-editor";
+import { CombinePacksSheet } from "../combine-packs-sheet";
+import { combinePacks } from "../combine-packs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Pencil,
@@ -93,6 +97,7 @@ export default function Home() {
     : undefined;
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [combineIds, setCombineIds] = useState<string[] | null>(null);
   const [name, setName] = useState("My sticker pack");
   const [draft, setDraft] = useState<Sticker[]>([]);
   const [busy, setBusy] = useState("");
@@ -106,7 +111,7 @@ export default function Home() {
     null,
   );
   const [failedImport, setFailedImport] = useState<{
-    assets: DocumentPicker.DocumentPickerAsset[];
+    sources: ImportSource[];
     packId?: string;
   } | null>(null);
   const lock = useRef(false);
@@ -228,12 +233,20 @@ export default function Home() {
               "image/heic",
               "image/heif",
               "image/avif",
+              "application/zip",
+              "application/x-zip-compressed",
+              "application/x-zip",
+              "application/octet-stream",
             ],
             multiple: true,
             copyToCacheDirectory: true,
+            base64: false,
           });
       if (result.canceled) return;
-      await importAssets(result.assets, appendTo);
+      await importAssets(
+        result.assets.map((asset) => ({ asset })),
+        appendTo,
+      );
     } catch (e) {
       notify(
         "Could not open your files",
@@ -244,49 +257,53 @@ export default function Home() {
       lock.current = false;
     }
   }
-  async function importAssets(
-    assets: DocumentPicker.DocumentPickerAsset[],
-    appendTo?: Pack,
-  ) {
-    const converted: Sticker[] = [];
-    const failures: string[] = [];
-    const failed: DocumentPicker.DocumentPickerAsset[] = [];
+  async function importAssets(sources: ImportSource[], appendTo?: Pack) {
     setFailedImport(null);
-    for (const [index, asset] of assets.entries()) {
-      const progress = (stage: string) =>
-        setBusy(
-          assets.length > 1
-            ? `${index + 1}/${assets.length} · ${stage}`
-            : stage,
-        );
-      progress("Reading file…");
-      try {
-        converted.push(await convert(asset, undefined, progress));
-      } catch (e) {
-        failed.push(asset);
-        failures.push(`${asset.name}: ${conversionError(e)}`);
-      }
-    }
+    const {
+      stickers: converted,
+      failedSources,
+      failures,
+      archiveName,
+      duplicates,
+    } = await importFiles(
+      sources,
+      {
+        readArchive,
+        withImage,
+        convert: (asset, progress) => convert(asset, undefined, progress),
+      },
+      setBusy,
+    );
+    const messages: string[] = [];
     if (appendTo) {
       const { updated, created } = appendImported(appendTo, converted);
       if (converted.length) updatePack(updated);
       if (created.length) {
         addPacks(created);
-        if (!failures.length)
-          notify(
-            "Stickers saved",
-            `Extra stickers are in ${created.length === 1 ? "a new pack" : `${created.length} new packs`}.`,
-          );
+        messages.push(
+          `Extra stickers are in ${created.length === 1 ? "a new pack" : `${created.length} new packs`}.`,
+        );
       }
-    } else setDraft((current) => [...current, ...converted]);
-    if (failed.length) {
-      setFailedImport({ assets: failed, packId: appendTo?.id });
+    } else {
+      setDraft((current) => [...current, ...converted]);
+      if (archiveName && converted.length && !draft.length)
+        setName((current) =>
+          current === "My sticker pack" ? archiveName : current,
+        );
+    }
+    if (duplicates)
+      messages.push(
+        `Skipped ${duplicates} exact duplicate ${duplicates === 1 ? "image" : "images"}.`,
+      );
+    if (failedSources.length) {
+      setFailedImport({ sources: failedSources, packId: appendTo?.id });
       notify(
         converted.length ? "Some files need another try" : "Import failed",
         failures.join("\n\n"),
         true,
       );
-    }
+    } else if (messages.length)
+      notify("Stickers imported", messages.join("\n\n"));
   }
   async function retryImport() {
     if (!failedImport || lock.current) return;
@@ -302,7 +319,7 @@ export default function Home() {
     lock.current = true;
     setNotice(null);
     try {
-      await importAssets(retry.assets, target);
+      await importAssets(retry.sources, target);
     } finally {
       setBusy("");
       lock.current = false;
@@ -383,6 +400,23 @@ export default function Home() {
     setFailedImport(null);
     setCreating(false);
     setSelected(open ? created[0].id : null);
+  }
+  function saveCombination(ids: string[], name: string) {
+    if (!ready || lock.current) return;
+    const byId = new Map(packs.map((pack) => [pack.id, pack]));
+    const sources = ids.flatMap((id) => byId.get(id) ?? []);
+    const created = combinePacks(sources, name);
+    addPacks(created);
+    setCombineIds(null);
+    setFilter("All packs");
+    setQuery("");
+    setDeleting(false);
+    setSelected(created[0].id);
+    if (created.length > 1)
+      notify(
+        `${created.length} packs created`,
+        "Your combined stickers are saved in separate packs for WhatsApp. All of them are in My packs.",
+      );
   }
   function closePack() {
     if (notice || error) {
@@ -610,6 +644,15 @@ export default function Home() {
                     </View>
                   </View>
 
+                  <Button
+                    secondary
+                    title="Combine packs"
+                    icon={Layers}
+                    disabled={!ready || packs.length < 2 || !!busy}
+                    onPress={() => {
+                      if (!lock.current) setCombineIds([]);
+                    }}
+                  />
                   {!ready && (
                     <View style={{ gap: 12 }}>
                       <ActivityIndicator color={C.accent} />
@@ -634,6 +677,7 @@ export default function Home() {
                     !pack.animated ||
                     (viewablePacks.has(pack.id) &&
                       !creating &&
+                      !combineIds &&
                       !selectedPack &&
                       !menuPack &&
                       !notice &&
@@ -917,6 +961,16 @@ export default function Home() {
                       }}
                     />
                     <Button
+                      title="Combine with other packs"
+                      icon={Layers}
+                      secondary
+                      disabled={packs.length < 2}
+                      onPress={() => {
+                        setCombineIds([menuPack.id]);
+                        setMenuId(null);
+                      }}
+                    />
+                    <Button
                       title="Rename"
                       icon={Pencil}
                       secondary
@@ -935,6 +989,14 @@ export default function Home() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+      {combineIds && (
+        <CombinePacksSheet
+          packs={packs}
+          initialIds={combineIds}
+          onClose={() => setCombineIds(null)}
+          onCreate={saveCombination}
+        />
+      )}
       <Modal
         visible={creating || !!selectedPack}
         animationType="slide"
@@ -1008,9 +1070,11 @@ export default function Home() {
                       <ImagePlus size={26} color={C.olive} />
                     </View>
                     <Label style={{ fontFamily: face.bold, color: C.ink }}>
-                      Photos & GIFs
+                      Photos, GIFs & ZIPs
                     </Label>
-                    <Label style={{ fontSize: 12 }}>Choose files</Label>
+                    <Label style={{ fontSize: 12 }}>
+                      Choose images or a sticker ZIP
+                    </Label>
                   </Pressable>
                   <View style={{ flexDirection: "row", gap: 10 }}>
                     <View style={{ flex: 1 }}>
@@ -1151,7 +1215,7 @@ export default function Home() {
                     </View>
                     <Button
                       secondary
-                      title="Add stickers"
+                      title="Add images or ZIP"
                       icon={Plus}
                       disabled={!!busy || !!video}
                       onPress={() => pick(selectedPack)}
