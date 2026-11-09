@@ -7,6 +7,13 @@ ${marker}
 def peelSigningNames = ["PEEL_KEYSTORE_PATH", "PEEL_KEYSTORE_PASSWORD", "PEEL_KEY_ALIAS", "PEEL_KEY_PASSWORD"]
 def peelSigningReady = peelSigningNames.every { System.getenv(it)?.trim() }
 android {
+    // Only the local migration APK requires Android 9. Ordinary production
+    // releases retain their existing minimum SDK.
+    if (findProperty("peelSigningMigration") == "true") {
+        defaultConfig {
+            minSdkVersion 28
+        }
+    }
     signingConfigs {
         peelRelease {
             if (peelSigningReady) {

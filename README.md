@@ -14,6 +14,8 @@ Turn photos, GIFs, animated WebP, and short videos into WhatsApp sticker packs. 
 
 Create a pack, choose photos or GIFs, or trim a video to 1–6 seconds. Name your stickers, then tap **Import to WhatsApp** and confirm in WhatsApp. Hold a pack to open, rename, or delete it.
 
+You can also choose a ZIP in the file picker when creating a pack or adding stickers. Peel imports the images inside, uses the ZIP name for a new pack, and skips exact duplicates. If the ZIP has a `stickers/` folder, only images in those folders are imported, leaving out full sheets and cover art stored elsewhere. ZIPs can be up to 100 MB, with up to 500 images and 200 MB of uncompressed contents. Android extracts and converts them on-device.
+
 - Original image selection, transparent backgrounds, and automatic fitting to WhatsApp's size limits.
 - Separate static and animated packs, with 3–30 stickers per import. Smaller packs remain drafts.
 - Large and mixed selections split into compatible packs automatically.
@@ -34,18 +36,15 @@ Production certificate SHA-256: `73f6873772c4d869c4219d7b828221a43c6cb11213c8518
 
 ### Moving from an early test build
 
-The early Taildrop builds used a development signing key. They cannot be directly replaced by the production-signed app.
+The early Taildrop builds used a development signing key. On Android 9 or newer, a private migration APK can authorize the change to the production key and update the installed app while keeping its library. This requires both original signing keys.
 
-1. Install the 1.0.8 migration build supplied alongside your test installation.
-2. In Settings, export a backup to a folder outside Peel. Confirm that the JSON file is present.
-3. Only after exporting, uninstall the test build and install the public release.
-4. In Settings, restore the backup. Re-import packs into WhatsApp if needed.
+Follow [the local signing migration procedure](docs/signing-migration.md). Export and verify a backup before changing keys. Keep the existing app installed throughout the procedure; uninstalling Peel removes its local library. Backups contain your sticker images and names, so keep them somewhere private.
 
-Uninstalling Peel removes its local library. Backups contain your sticker images and names; keep them somewhere private.
+Android 7 and 8 cannot perform this signing-key rotation. Keep the installed app and its data until a separate migration has been planned. Private builds for this task stay local or on the private update feed; this procedure does not publish upstream.
 
 ## Development
 
-Requires Node 24.21.0, Bun 1.4.3, and FFmpeg with WebP support for the web converter and tests.
+Requires Node 24.22.1, Bun 1.4.4, and FFmpeg with WebP support for the web converter and tests.
 
 ```sh
 bun install --frozen-lockfile
@@ -66,7 +65,7 @@ Android is the supported release target. The repository includes web preview and
 
 ## Build and release
 
-Install JDK 21, Android SDK 36, build-tools 36.0.0, and NDK 27.1.12297006. Set `JAVA_HOME` and `ANDROID_HOME`.
+Install JDK 21, Android SDK 36 and 37, build-tools 36.0.0 and 37.0.0, and NDK 27.1.12297006. Set `JAVA_HOME` and `ANDROID_HOME`.
 
 Production builds require a private signing key. Never commit it or its passwords. The release script checks the version, package ID, and signing certificate before accepting an APK.
 
