@@ -7,7 +7,6 @@ import { importFiles, type ImportSource } from "../file-import";
 import { readArchive, withImage } from "../zip-files";
 import {
   FlatList,
-  type ViewToken,
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
@@ -137,7 +136,7 @@ export default function Home() {
     () => new Set(),
   );
   const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<Pack | null>[] }) => {
+    ({ viewableItems }: { viewableItems: { item: Pack | null }[] }) => {
       const ids = new Set(
         viewableItems.flatMap(({ item }) => (item?.animated ? [item.id] : [])),
       );
@@ -708,7 +707,7 @@ export default function Home() {
                 <Label style={{ textAlign: "center", padding: 16 }}>
                   No matching packs.
                 </Label>
-              ) : null
+              ) : undefined
             }
           />
         ) : (
