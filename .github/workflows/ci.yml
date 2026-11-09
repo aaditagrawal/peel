@@ -58,7 +58,7 @@ jobs:
         with:
           packages: platform-tools
           log-accepted-android-sdk-licenses: false
-      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platforms;android-37' 'build-tools;37.0.0' 'ndk;27.1.12297006' 'cmake;3.22.1'
       - run: bun install --frozen-lockfile
       - run: bunx expo prebuild --platform android --no-install
       - name: Compile Android app and native encoder tests without release secrets

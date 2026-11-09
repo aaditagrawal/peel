@@ -17,7 +17,7 @@ for required in PEEL_KEYSTORE_PATH PEEL_KEYSTORE_PASSWORD PEEL_KEY_ALIAS PEEL_KE
   [[ -n "${!required:-}" ]] || { echo "Missing $required" >&2; exit 1; }
 done
 [[ "$PEEL_KEYSTORE_PATH" = /* && -f "$PEEL_KEYSTORE_PATH" ]] || { echo "PEEL_KEYSTORE_PATH must be an existing absolute path" >&2; exit 1; }
-for component in 'platforms/android-36' 'build-tools/36.0.0' 'ndk/27.1.12297006' 'cmake/3.22.1'; do
+for component in 'platforms/android-36' 'build-tools/36.0.0' 'platforms/android-37' 'build-tools/37.0.0' 'ndk/27.1.12297006' 'cmake/3.22.1'; do
   [[ -d "$ANDROID_HOME/$component" ]] || { echo "Missing Android SDK component $component" >&2; exit 1; }
 done
 export CI=1

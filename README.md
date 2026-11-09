@@ -65,7 +65,7 @@ Android is the supported release target. The repository includes web preview and
 
 ## Build and release
 
-Install JDK 21, Android SDK 36, build-tools 36.0.0, and NDK 27.1.12297006. Set `JAVA_HOME` and `ANDROID_HOME`.
+Install JDK 21, Android SDK 36 and 37, build-tools 36.0.0 and 37.0.0, and NDK 27.1.12297006. Set `JAVA_HOME` and `ANDROID_HOME`.
 
 Production builds require a private signing key. Never commit it or its passwords. The release script checks the version, package ID, and signing certificate before accepting an APK.
 
